@@ -6,6 +6,7 @@ const { userModel, validate } = require("../models/user");
 const auth = require("../middleware/auth");
 const asyncMiddleware = require("../middleware/async");
 const multer = require("multer");
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -15,6 +16,7 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + "-" + uniqueSuffix + ".jpg");
   },
 });
+
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === "image/jpeg") {
     cb(null, true);
@@ -22,7 +24,23 @@ const fileFilter = (req, file, cb) => {
     cb(new Error("Invalid file type, only JPEG images are allowed!"));
   }
 };
-const upload = multer({ storage: storage, fileFilter: fileFilter });
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: fileFilter,
+}).single("upload_image");
+
+function multer_check(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).send("File size too large. Maximum size is 5MB");
+    }
+    return res.status(400).send(err.message);
+  } else if (err) {
+    return res.status(500).send(err.message);
+  }
+}
 
 router.get(
   "/me",
@@ -35,7 +53,8 @@ router.get(
 
 router.post(
   "/",
-  upload.single("upload_image"),
+  upload,
+  multer_check,
   asyncMiddleware(async (req, res) => {
     if (!req.file) {
       return res.status(400).send("No File Uploaded");

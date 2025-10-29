@@ -18,8 +18,9 @@ const storage = multer.diskStorage({
     );
   },
 });
+
 const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /jpeg|jpg|png|gif/;
+  const allowedFileTypes = /jpeg|jpg|png/;
   const extname = allowedFileTypes.test(
     path.extname(file.originalname).toLowerCase()
   );
@@ -28,9 +29,10 @@ const fileFilter = (req, file, cb) => {
   if (mimetype && extname) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type, only JPEG images are allowed!"));
+    cb(new Error("Invalid file type, only jpeg|jpg|png images are allowed!"));
   }
 };
+
 const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -52,6 +54,7 @@ router.post(
   "/",
   auth,
   upload,
+  multer_check,
   asyncMiddleware(async (req, res) => {
     if (!req.file) {
       return res.status(400).send("No File Uploaded");
@@ -64,8 +67,7 @@ router.post(
     await post.save();
 
     return res.status(200).json(req.file);
-  }),
-  multer_check
+  })
 );
 
 module.exports = router;

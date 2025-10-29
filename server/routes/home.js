@@ -9,7 +9,7 @@ router.get(
   "/",
   auth,
   asyncMiddleware(async (req, res) => {
-    const posts = await postModel.aggregate([{ $sample: { size: 5 } }]);
+    const posts = await postModel.aggregate([{ $sample: { size: 1 } }]);
     const users = await userModel.populate(posts, {
       path: "user",
       model: userModel,
