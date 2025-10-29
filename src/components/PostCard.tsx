@@ -1,5 +1,5 @@
 interface User {
-  profile_picture_path: string;
+  img_path: string;
   username: string;
 }
 
@@ -19,7 +19,7 @@ const ContentCard = ({ content }: ContentCardProps) => {
       <div className="flex items-center place-content-between">
         <div className="flex items-center">
           <img
-            src={content.user.profile_picture_path}
+            src={content.user.img_path}
             className="profile rounded-full size-[40px]"
           />
           <p className="text-[10px] ml-[10px]">{content.user.username}</p>

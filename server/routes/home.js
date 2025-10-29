@@ -13,7 +13,7 @@ router.get(
     const users = await userModel.populate(posts, {
       path: "user",
       model: userModel,
-      select: "username profile_picture_path",
+      select: "username img_path",
     });
 
     res.json(posts);

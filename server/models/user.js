@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const userSchema = new mongoose.Schema({
   username: { type: String, minlength: 5, maxlength: 25, required: true },
   password: { type: String, minlength: 5, maxlength: 1024, required: true },
+  img_path: { type: String, maxlength: 1024, required: true },
 });
 
 userSchema.methods.generateAuthToken = function () {
