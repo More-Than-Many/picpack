@@ -6,10 +6,35 @@ const { userModel, validate } = require("../models/user");
 const auth = require("../middleware/auth");
 const asyncMiddleware = require("../middleware/async");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const temp_folder_path = "./temp";
+
+function delete_files(folder_path) {
+  fs.readdir(folder_path, (err, files) => {
+    if (err) {
+      console.error("Error reading directory:", err);
+      return;
+    }
+
+    files.forEach((file) => {
+      var file_path = path.join(folder_path, file);
+
+      fs.unlink(file_path, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error(`Error deleting file ${file_path}:`, unlinkErr);
+        } else {
+          console.log(`Deleted: ${file_path}`);
+        }
+      });
+    });
+  });
+}
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/");
+    cb(null, "temp/");
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -31,17 +56,6 @@ const upload = multer({
   fileFilter: fileFilter,
 }).single("upload_image");
 
-function multer_check(err, req, res, next) {
-  if (err instanceof multer.MulterError) {
-    if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).send("File size too large. Maximum size is 5MB");
-    }
-    return res.status(400).send(err.message);
-  } else if (err) {
-    return res.status(500).send(err.message);
-  }
-}
-
 router.get(
   "/me",
   auth,
@@ -54,7 +68,6 @@ router.get(
 router.post(
   "/",
   upload,
-  multer_check,
   asyncMiddleware(async (req, res) => {
     if (!req.file) {
       return res.status(400).send("No File Uploaded");
@@ -62,6 +75,7 @@ router.post(
 
     const { error } = validate(req.body);
     if (error) {
+      delete_files(temp_folder_path);
       return res.status(400).send(error.details[0].message);
     }
 
@@ -72,7 +86,12 @@ router.post(
     });
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
-    await user.save();
+    try {
+      await user.save();
+    } catch (error) {
+      delete_files(temp_folder_path);
+      return res.status(400).send(error.details[0].message);
+    }
 
     const token = user.generateAuthToken();
     res.header("x-auth-token", token).send(_.pick(user, ["_id", "username"]));
