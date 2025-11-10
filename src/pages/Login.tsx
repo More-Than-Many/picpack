@@ -49,7 +49,7 @@ const Login = () => {
         <div>
           <form
             action={action}
-            className="loginForm min-w-[400px] h-fit flex flex-col p-[25px] gap-[40px]"
+            className="loginForm min-w-[400px] h-fit flex flex-col p-[25px] gap-[20px]"
           >
             <h1 className="text-center font-bold text-[35px]">Login</h1>
             {data?.status && (

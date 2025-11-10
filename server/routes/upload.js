@@ -65,7 +65,7 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: fileFilter,
-}).single("upload_image");
+}).single("upload_img");
 
 router.post(
   "/",

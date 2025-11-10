@@ -28,7 +28,8 @@ const CreatePost = () => {
         navigate("/login");
       }
     } catch (err) {
-      return console.log(err);
+      console.log(err);
+      return;
     }
     setImgPreview(null);
   }

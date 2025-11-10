@@ -1,210 +1,153 @@
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-  const [data, action, isPending] = useActionState(registerUser, undefined);
   const navigate = useNavigate();
-
-  const [username, setUsername] = useState("");
+  const [data, action, isPending] = useActionState(registerUser, undefined);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isMatching, setIsMatching] = useState(true);
-  const [pseudoIndex, setPseudoIndex] = useState(0);
-  const [imgPreview, setImgPreview] = useState<string | null>(null);
+  const [imgPreview, setImgPreview] = useState("");
 
   async function registerUser(previousState: unknown, formData: FormData) {
-    const username = formData.get("username") as string;
-    const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirm-password") as string;
-
-    if (password !== confirmPassword) {
-      return { status: "Passwords do not match" };
-    }
-
+    setImgPreview("");
     try {
       const response = await fetch("http://localhost:8080/users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username: username, password: password }),
+        body: formData,
       });
 
-      if (!response.ok) {
+      const userInfo = await response.json();
+
+      if (!userInfo) {
         return { status: "error" };
       }
 
-      if (response.headers.get("x-auth-token")) {
-        localStorage.setItem(
-          "x-auth-token",
-          response.headers.get("x-auth-token") as string
-        );
+      if (response.ok) {
+        localStorage.setItem("userData", JSON.stringify(userInfo));
 
-        navigate("/");
+        if (response.headers.get("x-auth-token")) {
+          localStorage.setItem(
+            "x-auth-token",
+            response.headers.get("x-auth-token") as string
+          );
+
+          navigate("/");
+        }
+      } else {
+        return { status: "error" };
       }
     } catch (err) {
-      return console.log(err);
+      return { status: err };
     }
   }
 
   return (
     <>
-      <div className="flex justify-center items-center h-[100vh] ">
-        <div>
-          <form
-            action={action}
-            className="loginForm min-w-[400px] h-fit p-[25px]"
-          >
-            <h1 className="text-center font-bold text-[35px]">Sign Up</h1>
-            <div className="min-h-[400px] flex justify-center items-center">
-              {pseudoIndex == 0 && (
-                <div className="flex flex-col gap-[40px] min-w-[400px]">
-                  {data?.status && (
-                    <span className="text-center">
-                      Invalid username or password
-                    </span>
-                  )}
-                  {!isMatching && (
-                    <span className="text-center">Passwords do not match</span>
-                  )}
-                  <input
-                    id="username"
-                    name="username"
-                    minLength={5}
-                    maxLength={25}
-                    required
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                    }}
-                    className="text-center focus:placeholder:opacity-0 rounded-[30px] border-black border-2 py-[10px] text-[20px]"
-                  />
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    minLength={5}
-                    maxLength={255}
-                    required
-                    placeholder="Password"
-                    className="text-center focus:placeholder:opacity-0 rounded-[30px] border-black border-2 py-[10px] text-[20px]"
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                    }}
-                    onBlur={() => {
-                      if (password !== confirmPassword) {
-                        setIsMatching(false);
-                      }
-                    }}
-                    onFocus={() => {
-                      setIsMatching(true);
-                    }}
-                    value={password}
-                  />
-                  <input
-                    id="confirm-password"
-                    name="confirm-password"
-                    type="password"
-                    minLength={5}
-                    maxLength={255}
-                    required
-                    placeholder="Confirm Password"
-                    className="text-center focus:placeholder:opacity-0 rounded-[30px] border-black border-2 py-[10px] text-[20px] "
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                    }}
-                    onBlur={() => {
-                      if (password !== confirmPassword) {
-                        setIsMatching(false);
-                      }
-                    }}
-                    onFocus={() => {
-                      setIsMatching(true);
-                    }}
-                    value={confirmPassword}
-                  />
-                  <button
-                    type="button"
-                    className="bg-amber-300 rounded-[30px] py-[10px] hover:bg-amber-200 cursor-pointer text-[20px]"
-                    onClick={() => {
-                      setPseudoIndex(pseudoIndex + 1);
-                    }}
-                  >
-                    &#8594;
-                  </button>
-                </div>
-              )}
-
-              {pseudoIndex == 1 && (
-                <div className="flex flex-col min-w-[400px] gap-3">
-                  <div className="flex flex-col justify-center items-center">
-                    <label>Profile Picture</label>
-                    <div className="w-[300px] h-[300px] outline-1">
-                      {imgPreview && <img src={imgPreview} />}
-                      {!imgPreview && (
-                        <label htmlFor="upload_image">
-                          <svg width="50" height="50" viewBox="0 0 50 50">
-                            <line
-                              x1="10"
-                              y1="25"
-                              x2="40"
-                              y2="25"
-                              stroke="black"
-                              stroke-width="2"
-                            />
-                            <line
-                              x1="25"
-                              y1="10"
-                              x2="25"
-                              y2="40"
-                              stroke="black"
-                              stroke-width="2"
-                            />
-                          </svg>
-                        </label>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="file"
-                      id="upload_image"
-                      name="upload_image"
-                      accept="image/png, image/jpeg"
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      className="bg-amber-300 rounded-[30px] py-[10px] hover:bg-amber-200 cursor-pointer text-[20px] flex-1"
-                      onClick={() => {
-                        setPseudoIndex(pseudoIndex - 1);
-                      }}
-                    >
-                      &#8592;
-                    </button>
-                    <button
-                      type="button"
-                      className="bg-amber-300 rounded-[30px] py-[10px] hover:bg-amber-200 cursor-pointer text-[20px] flex-1"
-                      onClick={() => {}}
-                    >
-                      Sign Up
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </form>
-          <p
-            onClick={() => {
-              navigate("/login");
+      <div className="flex flex-col justify-center items-center h-[100vh]">
+        <form
+          action={action}
+          className="flex flex-col justify-center  min-w-[400px] h-fit p-[25px] gap-[20px]"
+        >
+          <h1 className="text-center font-bold text-[35px]">Sign Up</h1>
+          <input
+            id="username"
+            name="username"
+            className="text-center focus:placeholder:opacity-0 rounded-[30px] border-black border-2 py-[10px] text-[20px]"
+            placeholder="Username"
+            minLength={5}
+            maxLength={25}
+            required
+          />
+          <input
+            id="password"
+            name="password"
+            className="text-center focus:placeholder:opacity-0 rounded-[30px] border-black border-2 py-[10px] text-[20px]"
+            placeholder="Password"
+            type="password"
+            minLength={5}
+            maxLength={25}
+            onChange={(e) => {
+              setPassword(e.target.value);
             }}
-            className="text-center underline hover:cursor-pointer hover:opacity-[50%]"
+            required
+          />
+          <input
+            id="confirm_password"
+            className="text-center focus:placeholder:opacity-0 rounded-[30px] border-black border-2 py-[10px] text-[20px]"
+            placeholder="Confirm Password"
+            type="password"
+            minLength={5}
+            maxLength={25}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+            }}
+            required
+          />
+          <div className="relative w-[400px] h-[400px] border-2 border-black flex justify-center items-center">
+            {!imgPreview && (
+              <label
+                htmlFor="upload_img"
+                className="border-black border-2 rounded-full p-[10px] hover:bg-black hover:text-white cursor-pointer"
+              >
+                Upload Image
+              </label>
+            )}
+            <input
+              id="upload_img"
+              name="upload_img"
+              type="file"
+              accept="image/png, image/jpeg"
+              className="hidden"
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                if (event.target.files && event.target.files.length > 0) {
+                  const file = event.target.files[0];
+                  const preview = URL.createObjectURL(file);
+                  setImgPreview(preview);
+                }
+              }}
+              required
+            />
+            {imgPreview && <img src={imgPreview} />}
+            {imgPreview && (
+              <div
+                className="absolute right-3 top-3 bg-black text-white hover:bg-white hover:text-black rounded-full border-white border-2 cursor-pointer"
+                onClick={() => {
+                  setImgPreview("");
+                }}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+          {password != confirmPassword && <span>Passwords do not match</span>}
+          <button
+            type="submit"
+            className="bg-amber-300 rounded-[30px] py-[10px] hover:bg-amber-200 cursor-pointer text-[20px]"
+            disabled={isPending && password == confirmPassword}
           >
-            Already a user?
-          </p>
-        </div>
+            Sign Up
+          </button>
+        </form>
+        <a
+          className="hover:underline cursor-pointer"
+          onClick={() => {
+            navigate("/login");
+          }}
+        >
+          Already have an account?
+        </a>
       </div>
     </>
   );
